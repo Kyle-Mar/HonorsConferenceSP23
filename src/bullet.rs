@@ -3,7 +3,8 @@ use bevy_rapier3d::prelude::Velocity;
 
 use crate::collision::*;
 use crate::audio::*;
-use crate::player_info::*;
+use crate::player::PlayerInfo;
+use crate::app_state::AppState;
 
 const SPEED: f32 = 10.0;
 
@@ -22,34 +23,28 @@ fn move_bullet(mut bullets: Query<(&mut Bullet, &mut Velocity)>){
 //fn spawn_bullet()
 
 fn bullet_collision(
-    mut bullets: Query<Entity, (With<Bullet>, With<CollisionTag>)>,
+    mut bullets: Query<(Entity, &CollisionTag), With<Bullet>>,
     player_info: Res<PlayerInfo>,
-    collision_info: Res<CollisionInfo>,
     mut commands: Commands,
     audio_controller: Res<AudioController>,
     audio: Res<Audio>,
 ){
-    for entity in bullets.iter_mut(){
-        if let Some(collision_list) = collision_info.get(&entity){
-            for collision in collision_list {
-                match collision.other.kind {
-                    CollidableKind::Wall | CollidableKind::Enemy => {
-                        if let Some(slam) = audio_controller.get_handle("slam"){
-                            audio.play_spatial_with_settings(
-                                slam.handle, PlaybackSettings::ONCE.with_volume(0.5),
-                                Transform::from_translation(player_info.position),
-                                4.0,
-                                collision.this.transform.translation);
-                            //audio.play_with_settings(slam.handle, PlaybackSettings::ONCE.with_volume(0.01));
-                        }
-                        commands.entity(entity).despawn();
-                        break;
-                    }
-                    _ => {}
+
+    for (entity, tag) in bullets.iter_mut(){
+        println!("{:?}", tag.other.kind);
+        match tag.other.kind {
+            CollidableKind::Enemy | CollidableKind::Wall => {
+                if let Some(slam) = audio_controller.get_handle("slam"){
+                    audio.play_spatial_with_settings(
+                        slam.handle, PlaybackSettings::ONCE.with_volume(0.5),
+                        Transform::from_translation(player_info.position),
+                        4.0,
+                        tag.this.transform.translation);
                 }
+                commands.entity(entity).despawn();
             }
-        } 
-        else{ continue; };
+                _ => {}
+        }
     }
 }
 
@@ -58,7 +53,9 @@ pub struct BulletPlugin;
 
 impl Plugin for BulletPlugin{
     fn build(&self, app: &mut App) {
-        app.add_system(move_bullet)
-        .add_system(bullet_collision);
+        app.add_systems((
+            move_bullet.in_set(OnUpdate(AppState::InGame)),
+            bullet_collision.in_set(OnUpdate(AppState::InGame)),
+        ));
     }
 }
