@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 use std::time::Duration;
-use rand::prelude::*;
+use rand::{Rng};
 
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
@@ -36,8 +36,8 @@ fn spawn_enemies(
     enemy_mesh: ResMut<EnemyMeshScene>,
 ){
     let mut rng = rand::thread_rng();
-    let x = rng.gen_range(-23..23);
-    let z = rng.gen_range(-23..23);
+    let x = rng.gen_range(-23,23);
+    let z = rng.gen_range(-23,23);
     commands
         .spawn(RigidBody::KinematicVelocityBased)
         .insert(SpatialBundle{..default()})

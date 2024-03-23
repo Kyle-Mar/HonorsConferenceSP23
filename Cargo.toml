@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bevy = "0.10.0"
 bevy_rapier3d = "0.21.0"
+rand="0.3.14"
 
 
 [workspace]
